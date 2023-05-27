@@ -1,7 +1,7 @@
 # ColorfullNmap
 After installing the installer.sh and running youre ready to use the nmap.
 
-usage: script.py [-h] [--version] [-p PORTS] [-Pn] target
+usage: script.py [--version] [-p PORTS] [-Pn] target
 
 Colorful Nmap Scanner
 
