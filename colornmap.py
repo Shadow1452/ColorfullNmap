@@ -3,9 +3,28 @@ import nmap
 import colorama
 from colorama import Fore, Style
 from tqdm import tqdm
+import threading
+import sys
+import time
 
 # Initialize colorama
 colorama.init(autoreset=True)
+
+# Global variable to control the display of progress bar
+display_progress = False
+
+def display_progress_bar(total_ports):
+    global display_progress
+
+    # Display the progress bar
+    progress_bar = tqdm(total=total_ports, unit='port', ncols=80)
+
+    while display_progress:
+        progress_bar.update(1)
+        time.sleep(0.1)
+
+    # Close the progress bar
+    progress_bar.close()
 
 def run_nmap_scan(target, ports, disable_ping, show_version):
     scanner = nmap.PortScanner()
@@ -16,7 +35,10 @@ def run_nmap_scan(target, ports, disable_ping, show_version):
     print()
 
     total_ports = sum(len(scanner[host][proto]) for host in scanner.all_hosts() for proto in scanner[host])
-    progress_bar = tqdm(total=total_ports, unit='port', ncols=80)
+
+    # Create a separate thread to display the progress bar
+    progress_thread = threading.Thread(target=display_progress_bar, args=(total_ports,))
+    progress_thread.start()
 
     for host in scanner.all_hosts():
         print(Fore.GREEN + f"Host: {host} ({scanner[host].hostname()})")
@@ -48,8 +70,10 @@ def run_nmap_scan(target, ports, disable_ping, show_version):
                     print(Fore.WHITE + "    Service: {}".format(service))
                     print()
 
-                progress_bar.update(1)
-    progress_bar.close()
+    # Stop the progress bar thread
+    global display_progress
+    display_progress = False
+    progress_thread.join()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Colorful Nmap Scanner', formatter_class=argparse.RawTextHelpFormatter)
@@ -57,7 +81,21 @@ if __name__ == '__main__':
     parser.add_argument('-p', '--ports', default='1-1000', help='Port range to scan (default: 1-1000)')
     parser.add_argument('-Pn', dest='disable_ping', action='store_true', help='Block ping probes')
     parser.add_argument('-sV', dest='show_version', action='store_true', help='Show version of found ports')
-    parser.add_argument('--version', action='version', version='%(prog)s 2.0.1', help='Show the version number and exit')
+    parser.add_argument('--version', action='version', version='%(prog)s 1.0', help='Show the version number and exit')
     args = parser.parse_args()
+
+    # Check if the arrow-up key is pressed to display the progress bar
+    if sys.stdin.isatty():
+        try:
+            if sys.stdin.fileno() == 0:
+                keyboard_thread = threading.Thread(target=keyboard.is_pressed, args=('up',))
+                keyboard_thread.start()
+                while not keyboard_thread.is_alive():
+                    pass
+                while not keyboard_thread.is_set():
+                    time.sleep(0.1)
+                display_progress = True
+        except Exception:
+            pass
 
     run_nmap_scan(args.target, args.ports, args.disable_ping, args.show_version)
