@@ -57,8 +57,7 @@ if __name__ == '__main__':
     parser.add_argument('-p', '--ports', default='1-1000', help='Port range to scan (default: 1-1000)')
     parser.add_argument('-Pn', dest='disable_ping', action='store_true', help='Block ping probes')
     parser.add_argument('-sV', dest='show_version', action='store_true', help='Show version of found ports')
-    parser.add_argument('--version', action='version', version='%(prog)s 2.0.0', help='Show the version number and exit')
-    parser.add_argument('-h', '--help', action='help', help='Show this help message and exit')
+    parser.add_argument('--version', action='version', version='%(prog)s 2.0.1', help='Show the version number and exit')
     args = parser.parse_args()
 
     run_nmap_scan(args.target, args.ports, args.disable_ping, args.show_version)
