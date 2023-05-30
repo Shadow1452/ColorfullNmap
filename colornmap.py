@@ -6,25 +6,17 @@ from tqdm import tqdm
 import threading
 import sys
 import time
+import keyboard
 
-# Initialize colorama
+# Initialize Colorama
 colorama.init(autoreset=True)
 
-# Global variable to control the display of progress bar
-display_progress = False
-
 def display_progress_bar(total_ports):
-    global display_progress
-
     # Display the progress bar
-    progress_bar = tqdm(total=total_ports, unit='port', ncols=80)
-
-    while display_progress:
-        progress_bar.update(1)
-        time.sleep(0.1)
-
-    # Close the progress bar
-    progress_bar.close()
+    with tqdm(total=total_ports, unit='port', ncols=80) as progress_bar:
+        while display_progress:
+            progress_bar.update(1)
+            time.sleep(0.1)
 
 def run_nmap_scan(target, ports, disable_ping, show_version):
     scanner = nmap.PortScanner()
@@ -41,7 +33,7 @@ def run_nmap_scan(target, ports, disable_ping, show_version):
     progress_thread.start()
 
     for host in scanner.all_hosts():
-        print(Fore.GREEN + f"Host: {host} ({scanner[host].hostname()})")
+        print(Fore.GREEN + "Host: {} ({})".format(host, scanner[host].hostname()))
         print(Fore.YELLOW + "State: %s" % scanner[host].state())
 
         for proto in scanner[host].all_protocols():
@@ -49,26 +41,17 @@ def run_nmap_scan(target, ports, disable_ping, show_version):
 
             ports = scanner[host][proto].keys()
             for port in ports:
-                state = scanner[host][proto][port]['state']
-                service = scanner[host][proto][port]['name']
-                if show_version:
-                    version = scanner[host][proto][port]['version']
-                    if version:
-                        print(Fore.WHITE + f"  Port: {port}")
-                        print(Fore.WHITE + "    State: {}".format(state))
-                        print(Fore.WHITE + "    Service: {}".format(service))
-                        print(Fore.WHITE + "    Version: {}".format(version))
-                        print()
-                    else:
-                        print(Fore.WHITE + f"  Port: {port}")
-                        print(Fore.WHITE + "    State: {}".format(state))
-                        print(Fore.WHITE + "    Service: {}".format(service))
-                        print()
-                else:
-                    print(Fore.WHITE + f"  Port: {port}")
-                    print(Fore.WHITE + "    State: {}".format(state))
-                    print(Fore.WHITE + "    Service: {}".format(service))
-                    print()
+                port_info = scanner[host][proto][port]
+                state = port_info['state']
+                service = port_info['name']
+                version = port_info['version'] if show_version else None
+
+                print(Fore.WHITE + "  Port: {}".format(port))
+                print(Fore.WHITE + "    State: {}".format(state))
+                print(Fore.WHITE + "    Service: {}".format(service))
+                if version:
+                    print(Fore.WHITE + "    Version: {}".format(version))
+                print()
 
     # Stop the progress bar thread
     global display_progress
